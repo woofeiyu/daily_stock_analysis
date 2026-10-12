@@ -243,3 +243,21 @@ gh run view <run_id> --log-failed
 - 自动 tag 默认不触发，只有 commit title 包含 `#patch`、`#minor`、`#major` 才会触发版本号更新。
 - 手动打 tag 必须使用 annotated tag。
 - 用户可见变更优先通过 PR 合入，并补齐 label 与验证说明。
+
+## Cursor Cloud specific instructions
+
+Cloud Agent 环境同时包含本仓库和同级仓库 `market-radar`。Python 依赖装在 `/opt/dev-venv`，登录 shell 中的 `python` 与 `python3` 指向该环境。`apps/dsa-web` 使用镜像里的 Node.js。
+
+每次启动会拉起这三个服务：
+
+- 本仓库 API：`python main.py --webui-only --host 0.0.0.0 --port 8000`。缺少 `static/` 时，这个命令会先做一次前端生产构建。
+- Vite 开发服务器：工作目录 `apps/dsa-web`，端口 `5173`，`/api` 代理到 `8000`。
+- `market-radar` 本地看板：在该仓库执行 `python app.py`，地址 `http://127.0.0.1:5000`。
+
+不配置 LLM、行情或通知密钥也可以打开 Web 界面。生成 market-radar 日报时保持 `ENABLE_MOCK_DATA=true`，并把真实数据源开关设为 false。未配置密钥时，AI 分析与推送保持关闭。
+
+常用检查：
+
+- 后端：`./scripts/ci_gate.sh syntax`、`./scripts/ci_gate.sh flake8`、`python -m pytest -m "not network"`
+- Web：`cd apps/dsa-web && npm run lint && npm test`
+- market-radar：在该仓库执行 `pytest`
